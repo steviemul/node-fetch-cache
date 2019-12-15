@@ -1,0 +1,10 @@
+http://localhost:11080 {
+
+  header /static/index.js {
+    -Etag
+    -Last-Modified
+  }
+
+  header /static/ Cache-Control "public, max-age=300"
+  header /static/data.json Cache-Control "public"
+}

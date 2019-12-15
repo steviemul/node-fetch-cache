@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "ioredis": "^4.14.1",
+    "node-fetch": "^2.6.0",
+    "winston": "^3.2.1"
+  },
+  "devDependencies": {
+    "eslint": "^6.7.2",
+    "eslint-config-google": "^0.14.0",
+    "jest": "^24.9.0"
+  }
+}

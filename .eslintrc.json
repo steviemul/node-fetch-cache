@@ -1,0 +1,22 @@
+{
+  "parserOptions": {
+    "ecmaVersion": 8,
+    "sourceType": "script",
+    "ecmaFeatures": {
+      "experimentalObjectRestSpread": true
+    }
+  },
+  "extends": [
+    "google"
+  ],
+  "env": {
+    "node": true,
+    "jest": true
+  },  
+  "rules" : {
+    "comma-dangle":"off",
+    "max-len":"off",
+    "require-jsdoc":"off",
+    "no-throw-literal": "off"
+  }
+}

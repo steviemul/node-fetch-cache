@@ -1,0 +1,19 @@
+{
+  "expires" : true,
+  "cache": {
+    "type": "redis",
+    "etagSupport": true,
+    "params": {
+      "redis": {
+        "servers": [{
+          "host": "localhost",
+          "port": 20001
+        }, {
+          "host": "localhost",
+          "port": 20002
+        }]
+      },
+      "location": "/tmp/node-cache"
+    }
+  }
+}
