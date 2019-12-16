@@ -3,6 +3,7 @@
   "cache": {
     "type": "redis",
     "etagSupport": true,
+    "logging": true,
     "params": {
       "redis": {
         "servers": [{

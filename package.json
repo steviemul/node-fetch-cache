@@ -1,4 +1,10 @@
 {
+  "name": "node-fetch-cache",
+  "displayName": "node-fetch-cache",
+  "description": "Wrapper for node-fetch with caching",
+  "version": "0.0.1",
+  "publisher": "steviemul",
+  "license": "MIT",
   "scripts": {
     "test": "jest"
   },

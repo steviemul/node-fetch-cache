@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-const caches = require('../cache');
+const {createCache} = require('../cache');
 const loggingCache = require('../cache/logging-cache');
 const key = require('../cache/key');
 const {createCachedResponse, shouldCacheResponse, getTTL, mustRevalidate} = require('./cache-helper');
@@ -7,7 +7,7 @@ const {createResponse} = require('./response-helper');
 const {revalidate} = require('./revalidate-request');
 
 const config = require('../config');
-const cache = loggingCache(caches[config.cache.type]);
+let cache;
 
 const cachingFetch = (url, options, cache) => {
   return fetch(url, options).then((response) => {
@@ -30,9 +30,13 @@ const cachingFetch = (url, options, cache) => {
   });
 };
 
-const createFetch = () => {
+const createFetch = (cacheType) => {
+  cache = config.cache.logging ?
+    loggingCache(createCache(cacheType || config.cache.type)) :
+    createCache(cacheType || config.cache.type);
+
   return async function(url, options = {}) {
-    if (options.method && options.method !== 'GET') {
+    if (config.cache.disabled || (options.method && options.method !== 'GET')) {
       return fetch(url, options);
     }
 

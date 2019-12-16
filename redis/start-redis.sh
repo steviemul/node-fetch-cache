@@ -7,6 +7,8 @@ END_PORT=$((PORT+NODES))
 TIMEOUT=2000
 HOSTS=""
 
+mkdir -p nodes
+
 echo "Starting Redis Servers"
 
 cd nodes
