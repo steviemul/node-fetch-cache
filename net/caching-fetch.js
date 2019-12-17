@@ -6,9 +6,16 @@ const {createCachedResponse, shouldCacheResponse, getTTL, mustRevalidate} = requ
 const {createResponse} = require('./response-helper');
 const {revalidate} = require('./revalidate-request');
 const logger = require('../logging/logger');
+const createRevalidator = require('./revalidator');
 
 const config = require('../config');
+
 let cache;
+
+const revalidator = createRevalidator(({url, response}) => {
+  logger.info(`Received response from worker for ${url}`);
+  cache.set(key(url), response, response.expires);
+});
 
 const cachingFetch = (url, options, cache) => {
   return fetch(url, options).then((response) => {
@@ -58,9 +65,7 @@ const createFetch = (cacheType) => {
         if (config.cache.staleWhileRevalidate === true) {
           logger.info(`Returning stale response for ${url}`);
 
-          getRevalidatedResponse(url, options, cachedResponse).then((response) => {
-            cache.set(key(url), response, response.expires);
-          });
+          revalidator.revalidate(url, options, cachedResponse);
         } else {
           cachedResponse = await getRevalidatedResponse(url, options, cachedResponse);
           cache.set(key(url), response, response.expires);
@@ -78,6 +83,8 @@ const disconnect = () => {
   if (cache.disconnect) {
     cache.disconnect();
   }
+
+  revalidator.exit();
 };
 
 module.exports = {

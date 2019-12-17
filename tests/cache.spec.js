@@ -22,6 +22,13 @@ it('we get a cache hit', async () => {
   expect(dataBody).toBeDefined();
 });
 
+it('we get a stale cache hit', async () => {
+  const dataResponse = await fetch('http://localhost:11080/static/data.json');
+  const dataBody = await dataResponse.text();
+
+  expect(dataBody).toBeDefined();
+});
+
 afterAll(() => {
   disconnect();
 });
