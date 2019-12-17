@@ -5,6 +5,7 @@ const key = require('../cache/key');
 const {createCachedResponse, shouldCacheResponse, getTTL, mustRevalidate} = require('./cache-helper');
 const {createResponse} = require('./response-helper');
 const {revalidate} = require('./revalidate-request');
+const logger = require('../logging/logger');
 
 const config = require('../config');
 let cache;
@@ -30,27 +31,40 @@ const cachingFetch = (url, options, cache) => {
   });
 };
 
+async function getRevalidatedResponse(url, options, cachedResponse) {
+  const response = await revalidate(url, options, cachedResponse);
+
+  cachedResponse.body = await response.text();
+  cachedResponse.headers = response.headers.raw();
+  cachedResponse.expires = getTTL(cachedResponse.headers);
+
+  return cachedResponse;
+};
+
 const createFetch = (cacheType) => {
   cache = config.cache.logging ?
     loggingCache(createCache(cacheType || config.cache.type)) :
     createCache(cacheType || config.cache.type);
 
   return async function(url, options = {}) {
-    if (config.cache.disabled || (options.method && options.method !== 'GET')) {
+    if (config.cache.disabled === true || (options.method && options.method !== 'GET')) {
       return fetch(url, options);
     }
 
-    const cachedResponse = await cache.get(key(url));
+    let cachedResponse = await cache.get(key(url));
 
     if (cachedResponse) {
       if (mustRevalidate(cachedResponse)) {
-        const response = await revalidate(url, options, cachedResponse);
+        if (config.cache.staleWhileRevalidate === true) {
+          logger.info(`Returning stale response for ${url}`);
 
-        cachedResponse.body = await response.text();
-        cachedResponse.headers = response.headers.raw();
-        cachedResponse.expires = getTTL(cachedResponse.headers);
-
-        cache.set(key(url), cachedResponse, cachedResponse.expires);
+          getRevalidatedResponse(url, options, cachedResponse).then((response) => {
+            cache.set(key(url), response, response.expires);
+          });
+        } else {
+          cachedResponse = await getRevalidatedResponse(url, options, cachedResponse);
+          cache.set(key(url), response, response.expires);
+        };
       }
 
       return createResponse(url, cachedResponse);

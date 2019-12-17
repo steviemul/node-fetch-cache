@@ -4,7 +4,9 @@ const MAX_AGE = 'max-age';
 const S_MAX_AGE = 's-max-age';
 const EXPIRES = 'expires';
 const DATE = 'date';
-const MUST_REVALIDATE = 'must-revalidate';
+const ETAG = 'etag';
+
+const config = require('../config');
 
 const getHeaderValues = (headerValues) => {
   const values = {};
@@ -77,10 +79,22 @@ module.exports = {
       }
     }
 
+    if (headers[ETAG]) {
+      shouldCache = true;
+    }
+
+    if (config.cache.force === true) {
+      shouldCache = true;
+    }
+
     return shouldCache;
   },
   mustRevalidate: (response) => {
     let revalidate = true;
+
+    if (config.cache.always === true) {
+      return false;
+    }
 
     const cacheControl = response.headers[CACHE_CONTROL];
 

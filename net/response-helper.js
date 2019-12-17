@@ -1,17 +1,17 @@
+const {Response, Headers} = require('node-fetch');
+
 const createResponse = (url, response, body) => {
   if (!response) {
     return null;
   }
 
-  return Promise.resolve({
-    ok: true,
-    url,
+  const fetchResponse = new Response(body || response.body, {
     status: 200,
     statusText: 'OK',
-    headers: response.headers,
-    json: () => Promise.resolve(JSON.parse(body || response.body)),
-    text: () => Promise.resolve(body || response.body)
+    headers: new Headers(response.headers)
   });
+
+  return Promise.resolve(fetchResponse);
 };
 
 module.exports = {

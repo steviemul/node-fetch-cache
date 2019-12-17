@@ -2,8 +2,12 @@
   "expires" : true,
   "cache": {
     "type": "redis",
+    "always" : true,
+    "staleWhileRevalidate": true,
     "etagSupport": true,
+    "encodeKeys": false,
     "logging": true,
+    "disabled": false,
     "params": {
       "redis": {
         "servers": [{

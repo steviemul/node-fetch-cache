@@ -1,9 +1,14 @@
 const crypto = require('crypto');
+const config = require('../config');
 
 module.exports = (key) => {
-  const hash = crypto.createHash('sha256');
+  if (config.cache.encodeKeys === true) {
+    const hash = crypto.createHash('sha256');
 
-  hash.update(key);
+    hash.update(key);
 
-  return hash.digest('hex');
+    return hash.digest('hex');
+  }
+
+  return key;
 };
