@@ -2,12 +2,13 @@ const Redis = require('ioredis');
 const config = require('../config');
 const servers = config.cache.params.redis.servers;
 
-const client = new Redis.Cluster(servers);
-
 module.exports = {
+  init: () => {
+    this.client = new Redis.Cluster(servers);
+  },
   get: (key) => {
     return new Promise((resolve, reject) => {
-      client.get(key, (err, result) => {
+      this.client.get(key, (err, result) => {
         if (err) {
           reject(err);
         }
@@ -20,13 +21,12 @@ module.exports = {
     const serializedValue = JSON.stringify(value);
 
     if (ttl) {
-      client.set(key, serializedValue, 'EX', ttl);
+      this.client.set(key, serializedValue, 'EX', ttl);
     } else {
-      client.set(key, serializedValue);
+      this.client.set(key, serializedValue);
     }
   },
   disconnect: () => {
-    client.disconnect();
+    this.client.disconnect();
   }
-}
-;
+};

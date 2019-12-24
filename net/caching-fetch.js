@@ -17,25 +17,20 @@ const revalidator = createRevalidator(({url, response}) => {
   cache.set(key(url), response, response.expires);
 });
 
-const cachingFetch = (url, options, cache) => {
-  return fetch(url, options).then((response) => {
-    const headers = response.headers.raw();
+async function cachingFetch(url, options, cache) {
+  const response = await fetch(url, options);
 
-    if (shouldCacheResponse(url, headers)) {
-      const ttl = getTTL(headers);
+  const headers = response.headers.raw();
 
-      response
-          .clone()
-          .text()
-          .then((value) => {
-            const cachedResponse = createCachedResponse(headers, value, ttl);
+  if (shouldCacheResponse(url, headers)) {
+    const body = await response.clone().text();
+    const ttl = getTTL(headers);
+    const cachedResponse = createCachedResponse(headers, body, ttl);
 
-            cache.set(key(url), cachedResponse, ttl);
-          });
-    }
+    cache.set(key(url), cachedResponse, ttl);
+  }
 
-    return response;
-  });
+  return response;
 };
 
 async function getRevalidatedResponse(url, options, cachedResponse) {
@@ -68,7 +63,7 @@ const createFetch = (cacheType) => {
           revalidator.revalidate(url, options, cachedResponse);
         } else {
           cachedResponse = await getRevalidatedResponse(url, options, cachedResponse);
-          cache.set(key(url), response, response.expires);
+          cache.set(key(url), cachedResponse, cachedResponse.expires);
         };
       }
 

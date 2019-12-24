@@ -1,14 +1,18 @@
-const logger = require('../logging/logger');
-
 module.exports = (cache) => {
   return {
+    hits: () => {
+      return this.hits || 0;
+    },
+    misses: () => {
+      return this.misses || 0;
+    },
     get: (key) => {
       return new Promise((resolve) => {
         cache.get(key).then((result) => {
           if (result) {
-            logger.info(`Cache hit on ${key}`);
+            this.hits++;
           } else {
-            logger.info(`Cache miss on ${key}`);
+            this.misses++;
           }
 
           resolve(result);
@@ -16,7 +20,6 @@ module.exports = (cache) => {
       });
     },
     set: (key, value, ttl) => {
-      logger.info(`Caching value with key ${key}`);
       cache.set(key, value, ttl);
     },
     disconnect: () => {

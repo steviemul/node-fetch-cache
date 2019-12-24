@@ -3,7 +3,7 @@
   "cache": {
     "type": "redis",
     "always" : false,
-    "staleWhileRevalidate": true,
+    "staleWhileRevalidate": false,
     "etagSupport": true,
     "encodeKeys": false,
     "logging": true,

@@ -1,8 +1,14 @@
+const statsCache = require('./stats-cache');
+
 module.exports = {
-  createCache: (cacheType) => {
+  createCache: (cacheType, options) => {
     const path = `./${cacheType}-cache`;
 
-    return require(path);
+    const cache = require(path);
+
+    cache.init && cache.init(options);
+
+    return statsCache(cache);
   }
 };
 

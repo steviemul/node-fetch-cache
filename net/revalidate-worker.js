@@ -7,18 +7,6 @@ const logger = require('../logging/logger');
 
 const cache = createCache('redis');
 
-const throttled = (delay, fn) => {
-  let lastCall = 0;
-  return (...args) => {
-    const now = (new Date).getTime();
-    if (now - lastCall < delay) {
-      return;
-    }
-    lastCall = now;
-    return fn(...args);
-  };
-};
-
 const handleRequest = (url, options, cachedResponse) => {
   revalidate(url, options, cachedResponse).then((response) => {
     response.text().then((body) => {
