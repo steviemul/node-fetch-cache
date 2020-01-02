@@ -5,7 +5,7 @@
   "strategy": "http",
   "http": {
     "always": false,
-    "staleWhileRevalidate": false,
+    "staleWhileRevalidate": true,
     "supportSharedCacheDirectives": false,
     "etagSupport": true
   },

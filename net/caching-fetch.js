@@ -4,12 +4,6 @@ const {createResponse} = require('./response-helper');
 const {revalidate} = require('./revalidate-request');
 const {createServices, getServices} = require('../services');
 const logger = require('../logging/logger');
-const createRevalidator = require('./revalidator');
-
-const revalidator = createRevalidator(({url, response}) => {
-  logger.debug(`Received response from worker for ${url}`);
-  cache.set(url, response, response.expires);
-});
 
 const cachingFetch = (url, options) => {
   return fetch(url, options).then((response) => {
@@ -60,14 +54,21 @@ const createFetch = (config) => {
     if (cachedResponse) {
       if (strategy.mustRevalidate(cachedResponse)) {
         if (strategy.staleWhileRevalidate() === true) {
-          logger.debug(`Returning stale response for ${url}`);
+          queueMicrotask(() => {
+            logger.debug(`Queuing micro task to revalidate response for ${url}`);
+            getRevalidatedResponse(url, options, cachedResponse).then((revalidatedResponse) => {
+              cache.set(url, revalidatedResponse, revalidatedResponse.expires);
 
-          revalidator.revalidate(url, options, cachedResponse);
+              logger.debug(`Revalidated response for ${url}`);
+            });
+          });
         } else {
           cachedResponse = await getRevalidatedResponse(url, options, cachedResponse);
           cache.set(url, cachedResponse, cachedResponse.expires);
         };
       }
+
+      logger.debug(`Returning cached response for ${url}`);
 
       return createResponse(url, cachedResponse);
     }
@@ -82,8 +83,6 @@ const disconnect = () => {
   if (cache.disconnect) {
     cache.disconnect();
   }
-
-  revalidator.exit();
 };
 
 module.exports = {
