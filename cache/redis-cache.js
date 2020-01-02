@@ -1,10 +1,10 @@
 const Redis = require('ioredis');
-const config = require('../config');
-const servers = config.cache.params.redis.servers;
 
 module.exports = {
-  init: () => {
-    this.client = new Redis.Cluster(servers);
+  init: (options) => {
+    this.client = new Redis.Cluster(options.servers, {
+      lazyConnect: true
+    });
   },
   get: (key) => {
     return new Promise((resolve, reject) => {

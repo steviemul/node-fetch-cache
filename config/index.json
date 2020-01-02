@@ -1,25 +1,27 @@
 {
-  "expires" : true,
-  "cache": {
-    "type": "redis",
-    "always" : false,
+  "logging": true,
+  "disabled": false,
+  "cache": "redis",
+  "strategy": "http",
+  "http": {
+    "always": false,
     "staleWhileRevalidate": false,
     "supportSharedCacheDirectives": false,
-    "etagSupport": true,
-    "encodeKeys": false,
-    "logging": true,
-    "disabled": false,
-    "params": {
-      "redis": {
-        "servers": [{
-          "host": "localhost",
-          "port": 20001
-        }, {
-          "host": "localhost",
-          "port": 20002
-        }]
+    "etagSupport": true
+  },
+  "redis": {
+    "servers": [
+      {
+        "host": "localhost",
+        "port": 20001
       },
-      "location": "/tmp/node-cache"
-    }
+      {
+        "host": "localhost",
+        "port": 20002
+      }
+    ]
+  },
+  "disk": {
+    "location": "/tmp/node-cache"
   }
 }

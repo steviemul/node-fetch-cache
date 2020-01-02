@@ -1,14 +1,32 @@
 const statsCache = require('./stats-cache');
+const loggingCache = require('./logging-cache');
+const defaultConfig = require('../config');
+const merge = require('../utils/merge');
+const defaultImpl = require('./default-mixin');
 
 module.exports = {
-  createCache: (cacheType, options) => {
+  createCache: (overrideConfig) => {
+    const config = merge(defaultConfig, overrideConfig || {});
+
+    const cacheType = config.cache;
+    const cacheOptions = config[cacheType];
+
     const path = `./${cacheType}-cache`;
+
+    defaultImpl.init(config);
 
     const cache = require(path);
 
-    cache.init && cache.init(options);
+    cache.init && cache.init(cacheOptions);
 
-    return statsCache(cache);
+    const resultingCache = (config.logging === true) ?
+      loggingCache(statsCache(cache)) :
+      statsCache(cache);
+
+    return {
+      ...defaultImpl,
+      ...resultingCache
+    };
   }
 };
 

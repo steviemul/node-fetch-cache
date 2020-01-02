@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const logger = require('../logging/logger');
+const {getServices} = require('../services');
 const {createResponse} = require('./response-helper');
 const IF_NONE_MATCH = 'If-None-Match';
 const IF_MODIFIED_SINCE = 'If-Modified-Since';
@@ -7,15 +8,13 @@ const ETAG = 'etag';
 const LAST_MODIFIED = 'last-modified';
 const NOT_MODIFIED = 304;
 
-const config = require('../config');
-const etagSupport = config.cache.etagSupport;
-
 async function revalidate(url, options, cachedResponse) {
-  logger.info(`Revalidating ${url}`);
+  logger.debug(`Revalidating ${url}`);
 
   const headers = options.headers || {};
+  const {strategy} = getServices();
 
-  if (etagSupport) {
+  if (strategy.etagSupport()) {
     if (cachedResponse.headers[ETAG]) {
       headers[IF_NONE_MATCH] = cachedResponse.headers[ETAG][0];
     }
@@ -30,10 +29,10 @@ async function revalidate(url, options, cachedResponse) {
   const response = await fetch(url, options);
 
   if (response.status === NOT_MODIFIED) {
-    logger.info(`Resource ${url} not changed`);
+    logger.debug(`Resource ${url} not changed`);
     return createResponse(url, cachedResponse);
   } else {
-    logger.info(`Resource ${url} changed, returning fresh version`);
+    logger.debug(`Resource ${url} changed, returning fresh version`);
   }
 
   return response;

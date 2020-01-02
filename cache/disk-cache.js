@@ -1,14 +1,15 @@
 const fs = require('fs');
 const path = require('path');
-const config = require('../config');
-
-const cacheLocation = config.cache.params.location;
+const key = require('../cache/key');
 
 module.exports = {
-  get: (key) => {
+  init: (options) => {
+    this.options = options;
+  },
+  get: (id) => {
     let value;
 
-    const location = path.join(cacheLocation, key);
+    const location = path.join(this.options.location, key(id));
 
     if (fs.existsSync(location)) {
       value = JSON.parse(fs.readFileSync(location, 'utf8'));
@@ -16,9 +17,9 @@ module.exports = {
 
     return Promise.resolve(value);
   },
-  set: (key, value) => {
+  set: (id, value) => {
     const serializedValue = JSON.stringify(value);
-    const location = path.join(cacheLocation, key);
+    const location = path.join(this.options.location, key(id));
 
     fs.writeFileSync(location, serializedValue, 'utf8');
   }

@@ -1,36 +1,32 @@
 const fetch = require('node-fetch');
-const {createCache} = require('../cache');
-const loggingCache = require('../cache/logging-cache');
-const key = require('../cache/key');
-const {createCachedResponse, shouldCacheResponse, getTTL, mustRevalidate} = require('./cache-helper');
+const {createCachedResponse} = require('./cache-helper');
 const {createResponse} = require('./response-helper');
 const {revalidate} = require('./revalidate-request');
+const {createServices, getServices} = require('../services');
 const logger = require('../logging/logger');
 const createRevalidator = require('./revalidator');
 
-const config = require('../config');
-
-let cache;
-
 const revalidator = createRevalidator(({url, response}) => {
-  logger.info(`Received response from worker for ${url}`);
-  cache.set(key(url), response, response.expires);
+  logger.debug(`Received response from worker for ${url}`);
+  cache.set(url, response, response.expires);
 });
 
-const cachingFetch = (url, options, cache) => {
+const cachingFetch = (url, options) => {
   return fetch(url, options).then((response) => {
+    const {cache, strategy} = getServices();
+
     if (response.ok) {
       const headers = response.headers.raw();
 
-      if (shouldCacheResponse(url, headers)) {
+      if (strategy.shouldCacheResponse(url, headers)) {
         // clone the response for caching, so that the calling method can still read the response as normal
         const copy = response.clone();
 
         copy.text().then((body) => {
-          const ttl = getTTL(headers);
+          const ttl = strategy.getTTL(headers);
           const cachedResponse = createCachedResponse(headers, body, ttl);
 
-          cache.set(key(url), cachedResponse, ttl);
+          cache.set(url, cachedResponse, ttl);
         });
       }
     }
@@ -42,34 +38,34 @@ const cachingFetch = (url, options, cache) => {
 async function getRevalidatedResponse(url, options, cachedResponse) {
   const response = await revalidate(url, options, cachedResponse);
 
+  const {strategy} = getServices();
+
   cachedResponse.body = await response.text();
   cachedResponse.headers = response.headers.raw();
-  cachedResponse.expires = getTTL(cachedResponse.headers);
+  cachedResponse.expires = strategy.getTTL(cachedResponse.headers);
 
   return cachedResponse;
 };
 
-const createFetch = (cacheType) => {
-  cache = config.cache.logging ?
-    loggingCache(createCache(cacheType || config.cache.type)) :
-    createCache(cacheType || config.cache.type);
+const createFetch = (config) => {
+  const {cache, strategy} = createServices(config);
 
   return async function(url, options = {}) {
-    if (config.cache.disabled === true || (options.method && options.method !== 'GET')) {
+    if (!cache.enabledForRequest(url, options)) {
       return fetch(url, options);
     }
 
-    let cachedResponse = await cache.get(key(url));
+    let cachedResponse = await cache.get(url);
 
     if (cachedResponse) {
-      if (mustRevalidate(cachedResponse)) {
-        if (config.cache.staleWhileRevalidate === true) {
-          logger.info(`Returning stale response for ${url}`);
+      if (strategy.mustRevalidate(cachedResponse)) {
+        if (strategy.staleWhileRevalidate() === true) {
+          logger.debug(`Returning stale response for ${url}`);
 
           revalidator.revalidate(url, options, cachedResponse);
         } else {
           cachedResponse = await getRevalidatedResponse(url, options, cachedResponse);
-          cache.set(key(url), cachedResponse, cachedResponse.expires);
+          cache.set(url, cachedResponse, cachedResponse.expires);
         };
       }
 
@@ -81,6 +77,8 @@ const createFetch = (cacheType) => {
 };
 
 const disconnect = () => {
+  const {cache} = getServices();
+
   if (cache.disconnect) {
     cache.disconnect();
   }
