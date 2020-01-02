@@ -31,7 +31,7 @@ async function revalidate(url, options, cachedResponse) {
 
   if (response.status === NOT_MODIFIED) {
     logger.info(`Resource ${url} not changed`);
-    return createResponse(url, response, cachedResponse.body);
+    return createResponse(url, cachedResponse);
   } else {
     logger.info(`Resource ${url} changed, returning fresh version`);
   }

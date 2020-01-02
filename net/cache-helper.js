@@ -1,5 +1,6 @@
 const CACHE_CONTROL = 'cache-control';
 const PUBLIC = 'public';
+const PRIVATE = 'private';
 const MAX_AGE = 'max-age';
 const S_MAX_AGE = 's-max-age';
 const EXPIRES = 'expires';
@@ -28,6 +29,13 @@ const getHeaderValues = (headerValues) => {
   return values;
 };
 
+/**
+ * Time to live is calcuated as S_MAX_AGE or MAX_AGE minus the current time
+ * in seconds
+ *
+ * @param {*} headers
+ * @return {number} the time to live in seconds
+ */
 const getTTL = (headers) => {
   const cacheControl = headers[CACHE_CONTROL];
 
@@ -74,11 +82,21 @@ module.exports = {
     if (cacheControl) {
       const values = getHeaderValues(cacheControl);
 
+      // This means directives aimed at intermediary caches i.e. non browser caches
+      if (config.cache.supportSharedCacheDirectives === true) {
+        // only browsers may cache responses with "cache-control: private"
+        if (values[PRIVATE]) {
+          return false;
+        }
+      }
+
+      // anything may cache responses with "cache-control: public"
       if (values[PUBLIC]) {
         shouldCache = true;
       }
     }
 
+    // if we've gotten this far, we'll assume a response with an etag may be cached
     if (headers[ETAG]) {
       shouldCache = true;
     }
@@ -92,6 +110,7 @@ module.exports = {
   mustRevalidate: (response) => {
     let revalidate = true;
 
+    // an override to always use cached values
     if (config.cache.always === true) {
       return false;
     }
@@ -118,5 +137,4 @@ module.exports = {
     return revalidate;
   },
   getTTL: getTTL
-}
-;
+};

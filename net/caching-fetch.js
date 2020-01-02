@@ -17,20 +17,26 @@ const revalidator = createRevalidator(({url, response}) => {
   cache.set(key(url), response, response.expires);
 });
 
-async function cachingFetch(url, options, cache) {
-  const response = await fetch(url, options);
+const cachingFetch = (url, options, cache) => {
+  return fetch(url, options).then((response) => {
+    if (response.ok) {
+      const headers = response.headers.raw();
 
-  const headers = response.headers.raw();
+      if (shouldCacheResponse(url, headers)) {
+        // clone the response for caching, so that the calling method can still read the response as normal
+        const copy = response.clone();
 
-  if (shouldCacheResponse(url, headers)) {
-    const body = await response.clone().text();
-    const ttl = getTTL(headers);
-    const cachedResponse = createCachedResponse(headers, body, ttl);
+        copy.text().then((body) => {
+          const ttl = getTTL(headers);
+          const cachedResponse = createCachedResponse(headers, body, ttl);
 
-    cache.set(key(url), cachedResponse, ttl);
-  }
+          cache.set(key(url), cachedResponse, ttl);
+        });
+      }
+    }
 
-  return response;
+    return response;
+  });
 };
 
 async function getRevalidatedResponse(url, options, cachedResponse) {

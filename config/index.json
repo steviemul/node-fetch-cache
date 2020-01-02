@@ -4,6 +4,7 @@
     "type": "redis",
     "always" : false,
     "staleWhileRevalidate": false,
+    "supportSharedCacheDirectives": false,
     "etagSupport": true,
     "encodeKeys": false,
     "logging": true,
