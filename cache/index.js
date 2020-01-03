@@ -5,11 +5,11 @@ const merge = require('../utils/merge');
 const defaultImpl = require('./default-mixin');
 
 module.exports = {
-  createCache: (overrideConfig) => {
-    const config = merge(defaultConfig, overrideConfig || {});
+  createCache: (overrideConfig = {}) => {
+    const config = merge(overrideConfig, defaultConfig);
 
     const cacheType = config.cache;
-    const cacheOptions = config[cacheType];
+    const cacheOptions = config[cacheType] || {};
 
     const path = `./${cacheType}-cache`;
 

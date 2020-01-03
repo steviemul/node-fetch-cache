@@ -1,8 +1,8 @@
 const fetch = require('node-fetch');
 const {createCachedResponse} = require('./cache-helper');
-const {createResponse} = require('./response-helper');
-const {revalidate} = require('./revalidate-request');
+const {createResponse, getRevalidatedResponse} = require('./response-helper');
 const {createServices, getServices} = require('../services');
+const queueRevalidate = require('./queue-revalidate');
 const logger = require('../logging/logger');
 
 const cachingFetch = (url, options) => {
@@ -29,18 +29,6 @@ const cachingFetch = (url, options) => {
   });
 };
 
-async function getRevalidatedResponse(url, options, cachedResponse) {
-  const response = await revalidate(url, options, cachedResponse);
-
-  const {strategy} = getServices();
-
-  cachedResponse.body = await response.text();
-  cachedResponse.headers = response.headers.raw();
-  cachedResponse.expires = strategy.getTTL(cachedResponse.headers);
-
-  return cachedResponse;
-};
-
 const createFetch = (config) => {
   const {cache, strategy} = createServices(config);
 
@@ -54,13 +42,12 @@ const createFetch = (config) => {
     if (cachedResponse) {
       if (strategy.mustRevalidate(cachedResponse)) {
         if (strategy.staleWhileRevalidate() === true) {
-          queueMicrotask(() => {
-            logger.debug(`Queuing micro task to revalidate response for ${url}`);
-            getRevalidatedResponse(url, options, cachedResponse).then((revalidatedResponse) => {
-              cache.set(url, revalidatedResponse, revalidatedResponse.expires);
+          logger.debug(`Queuing revalidate response for ${url}`);
 
-              logger.debug(`Revalidated response for ${url}`);
-            });
+          queueRevalidate(url, options, cachedResponse, (revalidatedResponse) => {
+            cache.set(url, revalidatedResponse, revalidatedResponse.expires);
+
+            logger.debug(`Revalidated response for ${url}`);
           });
         } else {
           cachedResponse = await getRevalidatedResponse(url, options, cachedResponse);

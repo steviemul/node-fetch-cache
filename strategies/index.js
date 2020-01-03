@@ -2,11 +2,11 @@ const defaultConfig = require('../config');
 const merge = require('../utils/merge');
 const defaultStrategy = require('./default');
 
-const createStrategy = (overrideConfig) => {
-  const config = merge(defaultConfig, overrideConfig || {});
+const createStrategy = (overrideConfig = {}) => {
+  const config = merge(overrideConfig, defaultConfig);
 
   const strategyType = config.strategy;
-  const strategyOptions = config[strategyType];
+  const strategyOptions = config[strategyType] || {};
 
   const path = `./${strategyType}`;
   const strategy = require(path);

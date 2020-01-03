@@ -1,5 +1,5 @@
 const {createFetch, disconnect} = require('../net/caching-fetch');
-const fetch = createFetch('mem');
+const fetch = createFetch({cache: 'mem'});
 const http = require('http');
 const mockServer = require('mockserver');
 let server;

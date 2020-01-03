@@ -1,4 +1,6 @@
 const {Response, Headers} = require('node-fetch');
+const {getServices} = require('../services');
+const {revalidate} = require('./revalidate-request');
 
 const createResponse = (url, response, body) => {
   if (!response) {
@@ -14,6 +16,19 @@ const createResponse = (url, response, body) => {
   return Promise.resolve(fetchResponse);
 };
 
+async function getRevalidatedResponse(url, options, cachedResponse) {
+  const response = await revalidate(url, options, cachedResponse);
+
+  const {strategy} = getServices();
+
+  cachedResponse.body = await response.text();
+  cachedResponse.headers = response.headers.raw();
+  cachedResponse.expires = strategy.getTTL(cachedResponse.headers);
+
+  return cachedResponse;
+};
+
 module.exports = {
-  createResponse
+  createResponse,
+  getRevalidatedResponse
 };
