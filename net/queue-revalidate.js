@@ -1,4 +1,4 @@
-const {getRevalidatedResponse} = require('./response-helper');
+const {getRevalidatedResponse} = require('./revalidator');
 
 const QUEUE = new Set();
 const LIMIT = 20;
@@ -12,8 +12,9 @@ const revalidate = (url, options, cachedResponse, callback) => {
       getRevalidatedResponse(url, options, cachedResponse).then((revalidatedResponse) => {
         callback(revalidatedResponse);
 
+        TASKS--;
+
         setTimeout(() => {
-          TASKS--;
           QUEUE.delete(url);
         }, RATE);
       });

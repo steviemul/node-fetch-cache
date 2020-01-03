@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
 const {createCachedResponse} = require('./cache-helper');
-const {createResponse, getRevalidatedResponse} = require('./response-helper');
+const {createResponse} = require('./response-helper');
+const {getRevalidatedResponse} = require('./revalidator');
 const {createServices, getServices} = require('../services');
 const queueRevalidate = require('./queue-revalidate');
 const logger = require('../logging/logger');
